@@ -1,7 +1,7 @@
 import React from "react";
 
 const App: React.FC = () => {
-  return <div>App</div>;
+  return <div className="w-full h-screen bg-slate-300">App</div>;
 };
 
 export default App;
