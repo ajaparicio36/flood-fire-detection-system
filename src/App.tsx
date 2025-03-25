@@ -45,7 +45,7 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <h1 className="text-3xl font-bold text-blue-800">
-          Flood Monitoring System
+          Fire and Flood Monitoring System
         </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

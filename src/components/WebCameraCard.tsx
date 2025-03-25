@@ -47,10 +47,13 @@ const WebCameraCard = ({
 
     startCamera();
 
+    // Store the ref value for cleanup
+    const videoElement = videoRef.current;
+
     // Cleanup function to stop the camera when component unmounts
     return () => {
-      if (videoRef.current && videoRef.current.srcObject) {
-        const stream = videoRef.current.srcObject as MediaStream;
+      if (videoElement && videoElement.srcObject) {
+        const stream = videoElement.srcObject as MediaStream;
         stream.getTracks().forEach((track) => track.stop());
       }
     };
@@ -73,7 +76,7 @@ const WebCameraCard = ({
   return (
     <Card className="overflow-hidden backdrop-blur-md bg-white/70 border border-blue-100 shadow-lg">
       <CardHeader className="bg-blue-600/10 border-b border-blue-100">
-        <CardTitle className="text-blue-800">Live Camera Feed</CardTitle>
+        <CardTitle className="pt-5 text-blue-800">Live Camera Feed</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <div className="relative aspect-video bg-black flex items-center justify-center">

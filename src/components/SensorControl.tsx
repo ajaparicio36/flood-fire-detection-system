@@ -33,7 +33,7 @@ const SensorControl = ({
   return (
     <Card className="backdrop-blur-md bg-white/70 border border-blue-100 shadow-lg">
       <CardHeader className="bg-blue-600/10 border-b border-blue-100">
-        <CardTitle className="text-blue-800">Sensor Control</CardTitle>
+        <CardTitle className="text-blue-800 pt-5">Sensor Control</CardTitle>
         <CardDescription>For UI demonstration only</CardDescription>
       </CardHeader>
       <CardContent className="p-4 space-y-6">

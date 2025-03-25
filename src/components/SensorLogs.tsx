@@ -28,7 +28,7 @@ const SensorLogs = ({ logs }: SensorLogsProps) => {
   return (
     <Card className="backdrop-blur-md bg-white/70 border border-blue-100 shadow-lg">
       <CardHeader className="bg-blue-600/10 border-b border-blue-100">
-        <CardTitle className="text-blue-800">Sensor Logs</CardTitle>
+        <CardTitle className="pt-5 text-blue-800">Sensor Logs</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[300px] p-4">
