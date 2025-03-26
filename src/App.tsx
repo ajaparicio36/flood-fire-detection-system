@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import WebCameraCard from "./components/WebCameraCard";
 import SensorLogs from "./components/SensorLogs";
 import { io, Socket } from "socket.io-client";
@@ -15,6 +16,12 @@ export type SensorLog = {
 // Backend API URL
 const BACKEND_URL = "http://localhost:5000";
 
+// Updated water level thresholds
+const WATER_LEVEL_THRESHOLDS = {
+  DANGER: 500,
+  CAUTION: 250,
+};
+
 function App() {
   // Socket connection state
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -25,6 +32,11 @@ function App() {
   const [rainfallDetected, setRainfallDetected] = useState<boolean>(false);
   const [waterLevel, setWaterLevel] = useState<WaterLevel>("Low");
 
+  // Refs for tracking latest values without re-rendering
+  const latestSmokeRef = useRef(smokeDetected);
+  const latestRainRef = useRef(rainfallDetected);
+  const latestWaterLevelRef = useRef(waterLevel);
+
   // Logs state
   const [logs, setLogs] = useState<SensorLog[]>([
     { timestamp: new Date(), message: "System initialized" },
@@ -32,12 +44,32 @@ function App() {
 
   // Add log entry
   const addLog = useCallback((message: string) => {
-    setLogs((prevLogs) => [{ timestamp: new Date(), message }, ...prevLogs]);
+    setLogs((prevLogs) => [
+      { timestamp: new Date(), message },
+      ...prevLogs.slice(0, 99),
+    ]);
   }, []);
+
+  // Update refs when state changes
+  useEffect(() => {
+    latestSmokeRef.current = smokeDetected;
+  }, [smokeDetected]);
+
+  useEffect(() => {
+    latestRainRef.current = rainfallDetected;
+  }, [rainfallDetected]);
+
+  useEffect(() => {
+    latestWaterLevelRef.current = waterLevel;
+  }, [waterLevel]);
 
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io(BACKEND_URL);
+    const newSocket = io(BACKEND_URL, {
+      transports: ["websocket"],
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
 
     newSocket.on("connect", () => {
       setConnected(true);
@@ -62,75 +94,87 @@ function App() {
     };
   }, [addLog]);
 
-  // Listen for sensor data
+  // Listen for sensor data with optimized handler registration
   useEffect(() => {
     if (!socket) return;
 
     // Smoke sensor events
-    socket.on("smoke_sensor_reading", (data) => {
-      setSmokeDetected(data.smoke_detected);
-      addLog(`Smoke sensor reading: ${data.value}`);
-    });
+    const handleSmokeReading = (data: any) => {
+      if (data.smoke_detected !== latestSmokeRef.current) {
+        setSmokeDetected(data.smoke_detected);
+        addLog(`Smoke sensor reading: ${data.value}`);
+      }
+    };
 
-    socket.on("smoke_alert", (data) => {
+    const handleSmokeAlert = (data: any) => {
       addLog(`ALERT: ${data.message}`);
-    });
+    };
 
     // Rain sensor events
-    socket.on("rain_sensor_reading", (data) => {
-      setRainfallDetected(data.rain_detected);
-      addLog(`Rain sensor reading: ${data.value}`);
-    });
+    const handleRainReading = (data: any) => {
+      if (data.rain_detected !== latestRainRef.current) {
+        setRainfallDetected(data.rain_detected);
+        addLog(`Rain sensor reading: ${data.value}`);
+      }
+    };
 
-    socket.on("rain_alert", (data) => {
+    const handleRainAlert = (data: any) => {
       addLog(`ALERT: ${data.message}`);
-    });
+    };
 
     // Water level events
-    socket.on("water_level_reading", (data) => {
-      // Map the sensor value to our water level type
+    const handleWaterLevelReading = (data: any) => {
+      // Map the sensor value to our water level type using updated thresholds
       let newWaterLevel: WaterLevel = "Low";
-      if (data.high_water_level) {
+
+      if (data.value >= WATER_LEVEL_THRESHOLDS.DANGER) {
         newWaterLevel = "DANGER";
-      } else if (data.value > 300) {
-        // Arbitrary middle threshold
+      } else if (data.value >= WATER_LEVEL_THRESHOLDS.CAUTION) {
         newWaterLevel = "Caution";
       }
 
-      setWaterLevel(newWaterLevel);
-      addLog(`Water level reading: ${data.value}`);
-    });
+      if (newWaterLevel !== latestWaterLevelRef.current) {
+        setWaterLevel(newWaterLevel);
+        addLog(`Water level reading: ${data.value} (${newWaterLevel})`);
+      }
+    };
 
-    socket.on("water_level_alert", (data) => {
+    const handleWaterLevelAlert = (data: any) => {
       addLog(`ALERT: ${data.message}`);
-    });
+    };
+
+    // Register all event handlers
+    socket.on("smoke_sensor_reading", handleSmokeReading);
+    socket.on("smoke_alert", handleSmokeAlert);
+    socket.on("rain_sensor_reading", handleRainReading);
+    socket.on("rain_alert", handleRainAlert);
+    socket.on("water_level_reading", handleWaterLevelReading);
+    socket.on("water_level_alert", handleWaterLevelAlert);
 
     // Cleanup listeners on unmount or socket change
     return () => {
-      socket.off("smoke_sensor_reading");
-      socket.off("smoke_alert");
-      socket.off("rain_sensor_reading");
-      socket.off("rain_alert");
-      socket.off("water_level_reading");
-      socket.off("water_level_alert");
+      socket.off("smoke_sensor_reading", handleSmokeReading);
+      socket.off("smoke_alert", handleSmokeAlert);
+      socket.off("rain_sensor_reading", handleRainReading);
+      socket.off("rain_alert", handleRainAlert);
+      socket.off("water_level_reading", handleWaterLevelReading);
+      socket.off("water_level_alert", handleWaterLevelAlert);
     };
   }, [socket, addLog]);
 
-  // Original state change logs (preserved for manual testing)
+  // Poll for latest state every second to ensure UI is up to date
   useEffect(() => {
-    if (!connected) return; // Skip logging state changes when not connected
-    addLog(`Smoke detector: ${smokeDetected ? "Detected" : "Clear"}`);
-  }, [smokeDetected, connected, addLog]);
+    if (!connected) return;
 
-  useEffect(() => {
-    if (!connected) return; // Skip logging state changes when not connected
-    addLog(`Rainfall detector: ${rainfallDetected ? "Detected" : "Clear"}`);
-  }, [rainfallDetected, connected, addLog]);
+    const intervalId = setInterval(() => {
+      // Force UI update with latest values if needed
+      setSmokeDetected((current) => latestSmokeRef.current);
+      setRainfallDetected((current) => latestRainRef.current);
+      setWaterLevel((current) => latestWaterLevelRef.current);
+    }, 1000);
 
-  useEffect(() => {
-    if (!connected) return; // Skip logging state changes when not connected
-    addLog(`Water level changed to: ${waterLevel}`);
-  }, [waterLevel, connected, addLog]);
+    return () => clearInterval(intervalId);
+  }, [connected]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6">
