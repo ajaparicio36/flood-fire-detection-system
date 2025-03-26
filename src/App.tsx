@@ -14,7 +14,7 @@ export type SensorLog = {
 };
 
 // Backend API URL
-const BACKEND_URL = "http://localhost:5000";
+const BACKEND_URL = "http://192.168.1.30:5000";
 
 // Updated water level thresholds
 const WATER_LEVEL_THRESHOLDS = {
