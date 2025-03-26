@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from "react";
 import WebCameraCard from "./components/WebCameraCard";
 import SensorLogs from "./components/SensorLogs";
-import SensorControl from "./components/SensorControl";
 import { io, Socket } from "socket.io-client";
 
 // Define sensor state types
@@ -158,14 +157,6 @@ function App() {
 
           <div className="space-y-6">
             <SensorLogs logs={logs} />
-            <SensorControl
-              smokeDetected={smokeDetected}
-              setSmokeDetected={setSmokeDetected}
-              rainfallDetected={rainfallDetected}
-              setRainfallDetected={setRainfallDetected}
-              waterLevel={waterLevel}
-              setWaterLevel={setWaterLevel}
-            />
           </div>
         </div>
       </div>
