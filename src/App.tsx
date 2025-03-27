@@ -66,12 +66,7 @@ function App() {
   // Initialize socket connection and set up event listeners
   useEffect(() => {
     console.log("Connecting to backend:", BACKEND_URL);
-    const newSocket = io(BACKEND_URL, {
-      transports: ["websocket", "polling"], // Allow fallback to polling
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      timeout: 10000,
-    });
+    const newSocket = io(BACKEND_URL);
 
     newSocket.on("connect", () => {
       console.log("Socket connected:", newSocket.id);
