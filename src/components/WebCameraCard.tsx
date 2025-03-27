@@ -8,7 +8,13 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
-import { AlertTriangle, Droplets, Flame, Camera } from "lucide-react";
+import {
+  AlertTriangle,
+  Droplets,
+  Flame,
+  Camera,
+  FireExtinguisherIcon,
+} from "lucide-react";
 import type { WaterLevel } from "../App";
 
 interface WebCameraCardProps {
@@ -26,6 +32,7 @@ const WebCameraCard = ({
 }: WebCameraCardProps) => {
   const [imageData, setImageData] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fireDetected, setFireDetected] = useState<boolean>(false);
 
   useEffect(() => {
     if (!socket) {
@@ -34,8 +41,6 @@ const WebCameraCard = ({
     }
 
     // Set up socket event listeners for camera data
-    // In your useEffect where you handle the camera data:
-
     const handleCameraData = (data: any) => {
       console.log("Received camera data:", data);
 
@@ -45,6 +50,13 @@ const WebCameraCard = ({
           setImageData(data.frame);
         } else if (typeof data.frame === "object" && data.frame.image) {
           setImageData(data.frame.image);
+        }
+
+        // Check for fire detection
+        if (data.fire_detected) {
+          setFireDetected(true);
+        } else {
+          setFireDetected(false);
         }
 
         // Clear any previous error
@@ -106,6 +118,16 @@ const WebCameraCard = ({
         </div>
 
         <div className="p-4 flex flex-wrap gap-2">
+          {fireDetected && (
+            <Badge
+              variant="destructive"
+              className="flex items-center gap-1 animate-pulse"
+            >
+              <FireExtinguisherIcon className="h-3 w-3" />
+              Fire Detected
+            </Badge>
+          )}
+
           {smokeDetected && (
             <Badge variant="destructive" className="flex items-center gap-1">
               <Flame className="h-3 w-3" />
