@@ -66,7 +66,13 @@ function App() {
   // Initialize socket connection and set up event listeners
   useEffect(() => {
     console.log("Connecting to backend:", BACKEND_URL);
-    const newSocket = io(BACKEND_URL);
+    const newSocket = io(BACKEND_URL, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+      extraHeaders: {
+        "Access-Control-Allow-Origin": "*",
+      },
+    });
 
     newSocket.on("connect", () => {
       console.log("Socket connected:", newSocket.id);
