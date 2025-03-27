@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import WebCameraCard from "./components/WebCameraCard";
 import SensorLogs from "./components/SensorLogs";
 import { io, Socket } from "socket.io-client";
+import dotenv from "dotenv";
 
 // Define sensor state types
 export type WaterLevel = "Low" | "Caution" | "DANGER";
@@ -13,8 +14,11 @@ export type SensorLog = {
   message: string;
 };
 
+dotenv.config();
+
 // Backend API URL
-const BACKEND_URL = "http://192.168.1.30:5000";
+const BACKEND_URL =
+  process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
 
 // Updated water level thresholds
 const WATER_LEVEL_THRESHOLDS = {
