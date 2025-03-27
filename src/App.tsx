@@ -168,9 +168,9 @@ function App() {
 
     const intervalId = setInterval(() => {
       // Force UI update with latest values if needed
-      setSmokeDetected((current) => latestSmokeRef.current);
-      setRainfallDetected((current) => latestRainRef.current);
-      setWaterLevel((current) => latestWaterLevelRef.current);
+      setSmokeDetected(latestSmokeRef.current);
+      setRainfallDetected(latestRainRef.current);
+      setWaterLevel(latestWaterLevelRef.current);
     }, 1000);
 
     return () => clearInterval(intervalId);
