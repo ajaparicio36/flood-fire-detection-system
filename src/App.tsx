@@ -63,40 +63,27 @@ function App() {
     latestWaterLevelRef.current = waterLevel;
   }, [waterLevel]);
 
-  // Initialize socket connection
+  // Initialize socket connection and set up event listeners
   useEffect(() => {
+    console.log("Connecting to backend:", BACKEND_URL);
     const newSocket = io(BACKEND_URL, {
-      transports: ["websocket"],
+      transports: ["websocket", "polling"], // Allow fallback to polling
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
+      timeout: 10000,
     });
 
     newSocket.on("connect", () => {
+      console.log("Socket connected:", newSocket.id);
       setConnected(true);
       addLog("Connected to server");
     });
 
-    newSocket.on("disconnect", () => {
+    newSocket.on("disconnect", (reason) => {
+      console.log("Socket disconnected:", reason);
       setConnected(false);
-      addLog("Disconnected from server");
+      addLog(`Disconnected from server: ${reason}`);
     });
-
-    newSocket.on("connection_status", (data) => {
-      addLog(`Server status: ${data.status}`);
-    });
-
-    // Set socket state
-    setSocket(newSocket);
-
-    // Cleanup on unmount
-    return () => {
-      newSocket.disconnect();
-    };
-  }, [addLog]);
-
-  // Listen for sensor data with optimized handler registration
-  useEffect(() => {
-    if (!socket) return;
 
     // Smoke sensor events
     const handleSmokeReading = (data: any) => {
@@ -148,37 +135,54 @@ function App() {
     };
 
     // Register all event handlers
-    socket.on("smoke_sensor_reading", handleSmokeReading);
-    socket.on("smoke_alert", handleSmokeAlert);
-    socket.on("rain_sensor_reading", handleRainReading);
-    socket.on("rain_alert", handleRainAlert);
-    socket.on("water_level_reading", handleWaterLevelReading);
-    socket.on("water_level_alert", handleWaterLevelAlert);
+    newSocket.on("smoke_sensor_reading", (data: any) => {
+      handleSmokeReading(data);
+    });
+    newSocket.on("smoke_alert", (data: any) => {
+      handleSmokeAlert(data);
+    });
+    newSocket.on("rain_sensor_reading", (data: any) => {
+      handleRainReading(data);
+    });
+    newSocket.on("rain_alert", (data: any) => {
+      handleRainAlert(data);
+    });
+    newSocket.on("water_level_reading", (data: any) => {
+      handleWaterLevelReading(data);
+    });
+    newSocket.on("water_level_alert", (data: any) => {
+      handleWaterLevelAlert(data);
+    });
 
-    // Cleanup listeners on unmount or socket change
+    // Set socket state
+    setSocket(newSocket);
+
+    // Cleanup on unmount
     return () => {
-      socket.off("smoke_sensor_reading", handleSmokeReading);
-      socket.off("smoke_alert", handleSmokeAlert);
-      socket.off("rain_sensor_reading", handleRainReading);
-      socket.off("rain_alert", handleRainAlert);
-      socket.off("water_level_reading", handleWaterLevelReading);
-      socket.off("water_level_alert", handleWaterLevelAlert);
+      console.log("Cleaning up socket connection");
+      newSocket.off("smoke_sensor_reading", handleSmokeReading);
+      newSocket.off("smoke_alert", handleSmokeAlert);
+      newSocket.off("rain_sensor_reading", handleRainReading);
+      newSocket.off("rain_alert", handleRainAlert);
+      newSocket.off("water_level_reading", handleWaterLevelReading);
+      newSocket.off("water_level_alert", handleWaterLevelAlert);
+      newSocket.disconnect();
     };
-  }, [socket, addLog]);
+  }, [addLog]);
 
   // Poll for latest state every second to ensure UI is up to date
-  useEffect(() => {
-    if (!connected) return;
+  // useEffect(() => {
+  //   if (!connected) return;
 
-    const intervalId = setInterval(() => {
-      // Force UI update with latest values if needed
-      setSmokeDetected(latestSmokeRef.current);
-      setRainfallDetected(latestRainRef.current);
-      setWaterLevel(latestWaterLevelRef.current);
-    }, 1000);
+  //   const intervalId = setInterval(() => {
+  //     // Force UI update with latest values if needed
+  //     setSmokeDetected(latestSmokeRef.current);
+  //     setRainfallDetected(latestRainRef.current);
+  //     setWaterLevel(latestWaterLevelRef.current);
+  //   }, 1000);
 
-    return () => clearInterval(intervalId);
-  }, [connected]);
+  //   return () => clearInterval(intervalId);
+  // }, [connected]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 p-6">
