@@ -100,6 +100,7 @@ function App() {
 
     // Smoke sensor events
     const handleSmokeReading = (data: any) => {
+      console.log(data);
       if (data.smoke_detected !== latestSmokeRef.current) {
         setSmokeDetected(data.smoke_detected);
         addLog(`Smoke sensor reading: ${data.value}`);
@@ -107,11 +108,13 @@ function App() {
     };
 
     const handleSmokeAlert = (data: any) => {
+      console.log(data);
       addLog(`ALERT: ${data.message}`);
     };
 
     // Rain sensor events
     const handleRainReading = (data: any) => {
+      console.log(data);
       if (data.rain_detected !== latestRainRef.current) {
         setRainfallDetected(data.rain_detected);
         addLog(`Rain sensor reading: ${data.value}`);
@@ -119,6 +122,7 @@ function App() {
     };
 
     const handleRainAlert = (data: any) => {
+      console.log(data);
       addLog(`ALERT: ${data.message}`);
     };
 
