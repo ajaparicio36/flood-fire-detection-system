@@ -34,9 +34,21 @@ const WebCameraCard = ({
     }
 
     // Set up socket event listeners for camera data
+    // In your useEffect where you handle the camera data:
+
     const handleCameraData = (data: any) => {
+      console.log("Received camera data:", data);
+
       if (data && data.frame) {
-        setImageData(data.frame);
+        // Handle both string format and object format
+        if (typeof data.frame === "string") {
+          setImageData(data.frame);
+        } else if (typeof data.frame === "object" && data.frame.image) {
+          setImageData(data.frame.image);
+        }
+
+        // Clear any previous error
+        setError(null);
       }
     };
 
