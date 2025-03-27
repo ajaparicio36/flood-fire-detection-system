@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -8,56 +8,53 @@ import {
   CardTitle,
 } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
-import { AlertTriangle, Droplets, Flame } from "lucide-react";
+import { AlertTriangle, Droplets, Flame, Camera } from "lucide-react";
 import type { WaterLevel } from "../App";
 
 interface WebCameraCardProps {
   smokeDetected: boolean;
   rainfallDetected: boolean;
   waterLevel: WaterLevel;
+  socket: any; // Socket.io client instance
 }
 
 const WebCameraCard = ({
   smokeDetected,
   rainfallDetected,
   waterLevel,
+  socket,
 }: WebCameraCardProps) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [cameraActive, setCameraActive] = useState(false);
+  const [imageData, setImageData] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Access the camera
-    const startCamera = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: true,
-          audio: false,
-        });
+    if (!socket) {
+      setError("Camera feed unavailable: No connection to server");
+      return;
+    }
 
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          setCameraActive(true);
-        }
-      } catch (err) {
-        console.error("Error accessing camera:", err);
-        setError("Could not access camera. Please check permissions.");
+    // Set up socket event listeners for camera data
+    const handleCameraData = (data: any) => {
+      if (data && data.frame) {
+        setImageData(data.frame);
       }
     };
 
-    startCamera();
+    const handleCameraAlert = (data: any) => {
+      console.log("Camera alert:", data);
+      // You could display alerts about camera detections here
+    };
 
-    // Store the ref value for cleanup
-    const videoElement = videoRef.current;
+    // Register event handlers
+    socket.on("camera_data", handleCameraData);
+    socket.on("camera_alert", handleCameraAlert);
 
-    // Cleanup function to stop the camera when component unmounts
+    // Cleanup function
     return () => {
-      if (videoElement && videoElement.srcObject) {
-        const stream = videoElement.srcObject as MediaStream;
-        stream.getTracks().forEach((track) => track.stop());
-      }
+      socket.off("camera_data", handleCameraData);
+      socket.off("camera_alert", handleCameraAlert);
     };
-  }, []);
+  }, [socket]);
 
   // Get water level badge color
   const getWaterLevelColor = () => {
@@ -82,18 +79,17 @@ const WebCameraCard = ({
         <div className="relative aspect-video bg-black flex items-center justify-center">
           {error ? (
             <div className="text-red-500 p-4">{error}</div>
-          ) : (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
+          ) : imageData ? (
+            <img
+              src={imageData}
+              alt="Live camera feed"
               className="max-h-full max-w-full object-contain"
-              onCanPlay={() => setCameraActive(true)}
             />
-          )}
-
-          {!cameraActive && !error && (
-            <div className="text-white">Initializing camera...</div>
+          ) : (
+            <div className="text-white flex flex-col items-center justify-center">
+              <Camera className="h-8 w-8 mb-2" />
+              <p>Waiting for camera feed...</p>
+            </div>
           )}
         </div>
 

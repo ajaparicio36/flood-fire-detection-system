@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -205,6 +204,7 @@ function App() {
             smokeDetected={smokeDetected}
             rainfallDetected={rainfallDetected}
             waterLevel={waterLevel}
+            socket={socket}
           />
 
           <div className="space-y-6">
