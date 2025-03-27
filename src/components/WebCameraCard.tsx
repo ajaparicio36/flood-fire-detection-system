@@ -44,39 +44,36 @@ const WebCameraCard = ({
     const handleCameraData = (data: any) => {
       console.log("Received camera data:", data);
 
-      if (data && data.frame) {
-        // Handle both string format and object format
+      // Check if this is data from the ML server (processed frame)
+      if (data && data.image) {
+        // This is a processed frame from the ML server
+        setImageData(data.image);
+        setFireDetected(Boolean(data.fire_detected));
+        setError(null);
+      }
+      // For backward compatibility with the old format
+      else if (data && data.frame) {
         if (typeof data.frame === "string") {
           setImageData(data.frame);
         } else if (typeof data.frame === "object" && data.frame.image) {
           setImageData(data.frame.image);
         }
 
-        // Check for fire detection
-        if (data.fire_detected) {
-          setFireDetected(true);
-        } else {
-          setFireDetected(false);
-        }
-
-        // Clear any previous error
+        setFireDetected(Boolean(data.fire_detected));
         setError(null);
       }
     };
 
-    const handleCameraAlert = (data: any) => {
-      console.log("Camera alert:", data);
-      // You could display alerts about camera detections here
-    };
-
     // Register event handlers
     socket.on("camera_data", handleCameraData);
-    socket.on("camera_alert", handleCameraAlert);
+    socket.on("camera_alert", (data: any) => {
+      console.log("Camera alert:", data);
+    });
 
     // Cleanup function
     return () => {
       socket.off("camera_data", handleCameraData);
-      socket.off("camera_alert", handleCameraAlert);
+      socket.off("camera_alert");
     };
   }, [socket]);
 
